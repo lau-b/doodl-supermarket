@@ -1,0 +1,8 @@
+name: markov_chain
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - ipykernel
+  - pygraphviz
+prefix: /home/cubo/anaconda3/envs/markov_chain
