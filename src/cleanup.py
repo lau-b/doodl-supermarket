@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import utils
+import os
 
 def clean_data(df):
     # we have to do the resampling and filling with respect to the cusomter
@@ -26,8 +27,11 @@ def clean_data(df):
 
 
 # get a list of files in data/raw
-filename = 'monday'
+dir_path = f'{utils.get_project_root()}/data/raw/'
+list_of_files = os.listdir(dir_path)
 
-fp = f'{utils.get_project_root()}/data/raw/{filename}.csv'
-
-df = pd.read_csv(fp, sep=';', index_col=0, parse_dates=True)
+for filename in list_of_files:
+    filepath = f'{utils.get_project_root()}/data/raw/{filename}'
+    df = pd.read_csv(filepath, sep=';', index_col=0, parse_dates=True)
+    df = clean_data(df)
+    df.to_csv(f'{utils.get_project_root()}/data/processed/{filename}')
