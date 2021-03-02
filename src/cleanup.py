@@ -26,6 +26,7 @@ def clean_data(df):
     # Since checkout is a absorbing state, we want for every customer to have a
     # transition that looks like (checkout) --> (checkout).
     df.replace(np.nan, 'checkout', regex=True, inplace=True)
+    df = df.drop(axis=1, columns=['customer_no'])
     return df
 
 def replace_thief_entries(df):
