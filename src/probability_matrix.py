@@ -23,7 +23,7 @@ def concatenate_files(dir_path):
 def calculate_prob_matrix(conc_df):
     '''conc_df is a DataFrame (must have state_t and state_t+1 states as columns). 
         The function calclates and returns the probabily matrix'''
-    prob_matrix = pd.crosstab(conc_df['location_t'], conc_df['location_t+1'], normalize=0).round(3)
+    prob_matrix = pd.crosstab(conc_df['location_t'], conc_df['location_t+1'], normalize=0)
     return prob_matrix
     
 conc_df = concatenate_files(dir_path)
