@@ -23,7 +23,9 @@ class Customer:
         return state + budget
 
     def next_state(self, prob_matrix):
-        '''prob_matrix is a probability matrix nxn'''
+        '''prob_matrix is the prbability matrix of the supermaket states (floats)
+        Returns the next state of the customer according to the current state and the
+        values of the prob matrix '''
         prob_line = np.array([prob_matrix.loc[prob_matrix.index.get_level_values(0) == self.state]]).reshape(-1)
         #print(prob_line)
         #print(prob_line.sum())
