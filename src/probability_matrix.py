@@ -33,7 +33,3 @@ def calculate_prob_matrix(conc_df):
         conc_df['location_t+1'],
         normalize=0)
     return prob_matrix
-
-
-conc_df = concatenate_files(dir_path)
-prob_matrix = calculate_prob_matrix(conc_df)
