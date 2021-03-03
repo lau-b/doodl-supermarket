@@ -9,7 +9,7 @@ from probability_matrix import calculate_prob_matrix, concatenate_files
 class Customer:
     '''single customer that can move in the supermarket randomly
        according to a probability matrix'''
-    def __init__(self, id, initial_state,  prob_matrix, budget = 100):
+    def __init__(self, id, initial_state, prob_matrix, budget=100):
         self.id = id
         self.state = initial_state
         self.budget = budget
@@ -17,8 +17,8 @@ class Customer:
         self.previous = initial_state
 
     def __repr__(self):
-        state = f'Customer {self.name} in state {self.state}.\n'
-        budget = f'The budget of customer {self.name} amount to {self.budget}'
+        state = f'Customer {self.id} in state {self.state}.\n'
+        budget = f'The budget of customer {self.id} amount to {self.budget}'
         return state + budget
 
     def next_state(self):
@@ -88,7 +88,6 @@ class Doodlmarket:
             customer.next_state()
 
             # call the fucntion that tells us which customer left the store (customer has transition from checkout to checkout)
-            print(customer.id, customer.state)
 
     def create_customers(self):
 
@@ -106,7 +105,20 @@ class Doodlmarket:
 
         return '???' # QUESTION @Malte: What to return here?
 
-    # def remove_customers(self):
+    def remove_customers(self):
+        for customer in self.customers:
+            print(customer.id, customer.previous, customer.state)
+            if customer.state == 'checkout' and customer.previous == 'checkout':
+                self.customers.remove(customer)
+
+    def record_customer_location(self):
+        # get current state of every customer
+        # get timestamp
+        # write customer to a csv file
+        for customer in self.customers:
+            with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'a') as file:
+                file.write(f'{self.get_time()},{customer.id},{customer.state}\n')
+
 
 
 dir_path = f'{utils.get_project_root()}/data/processed/'
@@ -128,8 +140,9 @@ if __name__ == '__main__':
         lidl.next_minute()
             # next_minute calls customer.move()
 
-        # lidl.remove_customers()
+        lidl.remove_customers()
 
+        lidl.record_customer_location()
 
         i += 1
 
