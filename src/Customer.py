@@ -149,16 +149,3 @@ if __name__ == '__main__':
         lidl.record_customer_location()
 
         i += 1
-
-
-# cust1 = Customer('Alex', 'dairy', prob_matrix)
-# #print(cust1)
-# while True:
-#     next = cust1.next_state()
-#     time.sleep(1)
-#     print('Is active?', cust1.is_active())
-#     if cust1.get_current_state() == 'checkout' and cust1.get_previous_state() == 'checkout':
-#         print('Previous state =', cust1.get_previous_state())
-#         print('Current state =', cust1.get_current_state())
-#         break
-
