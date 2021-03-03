@@ -1,14 +1,8 @@
 import pandas as pd
 import os
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import utils
 
-dir_path = f'{utils.get_project_root()}/data/processed/'
 
 def concatenate_files(dir_path):
-
     '''dir_path is the path to the directory where are stored the cleaned
        csv to be concatenated. The function concatenates the csv files and
        returns a DataFrame'''
@@ -20,11 +14,11 @@ def concatenate_files(dir_path):
 
     for filename in list_of_files:
         filepath = dir_path + filename
-        print(filepath)
         df = pd.read_csv(filepath, sep=',', index_col=1, parse_dates=True)
         conc_df = pd.concat([conc_df, df])
 
     return conc_df
+
 
 def calculate_prob_matrix(conc_df):
 
@@ -36,8 +30,9 @@ def calculate_prob_matrix(conc_df):
         normalize=0)
     return prob_matrix
 
+
 def calculate_starting_probability(conc_df):
     conc_df['date'] = conc_df.index.date
     conc_df = conc_df.drop(columns='location_t+1')
-    conc_df = conc_df.groupby(['date','customer_no']).first()
+    conc_df = conc_df.groupby(['date', 'customer_no']).first()
     return conc_df['location_t'].value_counts(normalize=1)

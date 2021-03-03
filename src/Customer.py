@@ -1,4 +1,3 @@
-import random
 import time
 import pandas as pd
 import numpy as np
@@ -30,12 +29,11 @@ class Customer:
         '''prob_matrix is the prbability matrix of the supermaket states
         (floats). Returns the next state of the customer according to the
         current state and the values of the prob matrix '''
-
-        prob_line = np.array([self.matrix.loc[self.matrix.index.get_level_values(0) == self.state]]).reshape(-1)
+        prob_line = np.array([self.matrix.loc[
+            self.matrix.index.get_level_values(0) == self.state]]).reshape(-1)
         next_st = np.random.choice(
             ['checkout', 'dairy', 'drinks', 'fruit', 'spices'],
             p=prob_line)
-        # next_st = np.random.choice(['list_of_locations_from the supermarket'], p=prob_line)
         self.previous = self.state
         self.state = next_st
         return next_st
@@ -61,7 +59,6 @@ class Doodlmarket:
         self.customers = []
         self.opens_at = 7
         self.unique_customers = 0
-        # self.locations = [] # which areas are there in the market
         self.probability_matrix = prob_matrix
         self.name = 'MarcoMarkt'
         self.initial_state_probability = initial_state_probability
@@ -74,7 +71,7 @@ class Doodlmarket:
 
     def get_state_of_customers(self):
         states = []
-        for customer in self.customers:  # TODO: make a list comprehension out of this.
+        for customer in self.customers:  # TODO: make a list comprehension
             states.append(customer.get_current_state())
         return states
 
@@ -106,13 +103,14 @@ class Doodlmarket:
 
     def remove_customers(self):
         for customer in self.customers:
-            if customer.state == 'checkout' and customer.previous == 'checkout':
+            if customer.state == 'checkout' and customer.previous == 'checkout':  #TODO: do we need the prev check?
                 self.customers.remove(customer)
 
     def record_customer_location(self):
+        filepath = f'{utils.get_project_root()}/data/output/marcomarkt.csv'
         for customer in self.customers:
-            with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'a') as file:
-                file.write(f'{self.get_time()},{customer.id},{customer.state}\n')
+            with open(filepath, 'a') as f:
+                f.write(f'{self.get_time()},{customer.id},{customer.state}\n')
 
 
 # QUESTION: where to put this?
