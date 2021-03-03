@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 import utils
 from probability_matrix import calculate_prob_matrix, concatenate_files
+from datetime import date
 
-#print(matrix)
 class Customer:
     '''single customer that can move in the supermarket randomly
        according to a probability matrix'''
@@ -49,7 +49,7 @@ class Customer:
 class Doodlmarket:
 
     def __init__(self):
-        # self.time = Time.localtime()
+        self.date = date.today()
         self.minute = 0
         self.customers = []
         self.opens_at = 7
@@ -74,9 +74,10 @@ class Doodlmarket:
     def get_time(self):
         """ returns the current time in 'HH:mm:SS'
         """
+        day = self.date.strftime('%Y-%m-%d')
         hour = self.opens_at + self.minute // 60
         minute = self.minute % 60
-        return f'{hour:02d}:{minute:02d}'
+        return f'{day} {hour:02d}:{minute:02d}:00'
 
 
     def next_minute(self):
@@ -101,13 +102,12 @@ class Doodlmarket:
             self.customers.append(Customer(
                 self.unique_customers,
                 'dairy', # TODO: use starting location function
-                self.probability_matrix))      # TODO: use self.probability_matrix
+                self.probability_matrix))
 
         return '???' # QUESTION @Malte: What to return here?
 
     def remove_customers(self):
         for customer in self.customers:
-            print(customer.id, customer.previous, customer.state)
             if customer.state == 'checkout' and customer.previous == 'checkout':
                 self.customers.remove(customer)
 
@@ -127,13 +127,17 @@ prob_matrix = calculate_prob_matrix(concatenate_files(dir_path))
 # simulation
 if __name__ == '__main__':
 
+    # creating the header for our output file, that we fill during the simulation
+    with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
+                file.write(f'timestamp,customer_no,location\n')
+
+
     lidl = Doodlmarket()
     i = 0
 
-    while i < 15: # is the shop open? TODO: write voolean function for that
+    while i < 120: # is the shop open? TODO: write voolean function for that
 
         # create customer(s) who enters the store
-        print(lidl)
 
         lidl.create_customers()
 
@@ -145,8 +149,6 @@ if __name__ == '__main__':
         lidl.record_customer_location()
 
         i += 1
-
-        print('################### \n')
 
 
 # cust1 = Customer('Alex', 'dairy', prob_matrix)
