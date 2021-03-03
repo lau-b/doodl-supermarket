@@ -20,9 +20,11 @@ def concatenate_files(dir_path):
 
     for filename in list_of_files:
         filepath = dir_path + filename
+        print(filepath)
         df = pd.read_csv(filepath, sep=',', index_col=1, parse_dates=True)
         conc_df = pd.concat([conc_df, df])
-        return conc_df
+
+    return conc_df
 
 def calculate_prob_matrix(conc_df):
 
@@ -33,3 +35,9 @@ def calculate_prob_matrix(conc_df):
         conc_df['location_t+1'],
         normalize=0)
     return prob_matrix
+
+def calculate_starting_probability(conc_df):
+    conc_df['date'] = conc_df.index.date
+    conc_df = conc_df.drop(columns='location_t+1')
+    conc_df = conc_df.groupby(['date','customer_no']).first()
+    return conc_df['location_t'].value_counts(normalize=1)
