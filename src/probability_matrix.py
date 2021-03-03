@@ -37,5 +37,3 @@ def calculate_prob_matrix(conc_df):
 
 conc_df = concatenate_files(dir_path)
 prob_matrix = calculate_prob_matrix(conc_df)
-
-print(prob_matrix)
