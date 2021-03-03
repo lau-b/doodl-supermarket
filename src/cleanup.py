@@ -3,7 +3,6 @@ import numpy as np
 import utils
 import os
 
-np.random.choice
 
 def clean_data(df):
     # we have to do the resampling and filling with respect to the cusomter
@@ -30,21 +29,20 @@ def clean_data(df):
     return df
 
 def replace_thief_entries(df):
-    thieves = df.loc[(df['location_t'] != 'checkout') &
-                     (df['location_t+1'].isna())]
+
+    thieves = df.loc[(df['location_t'] != 'checkout') & (df['location_t+1'].isna())]
 
     # we have to delete the untries from the original df
     df.drop(thieves.index, inplace=True)
 
     # creating a temporary df that we will append to the original later
-    thief_df = pd.DataFrame({'timestamp':[],
-                             'customer_no':[],
-                             'location_t':[],
-                             'location_t+1':[]})
+    thief_df = pd.DataFrame({'timestamp': [],
+                             'customer_no': [],
+                             'location_t': [],
+                             'location_t+1': []})
 
     # Define the time the store closes each day
     end = f'{thieves.index.get_level_values(1).date.min()} 21:50:00'
-
 
     for index, values in thieves.iterrows():
         start = index[1]
@@ -56,7 +54,7 @@ def replace_thief_entries(df):
 
         thief_df = pd.concat([thief_df, temp_df])
 
-    # we need to make thief_df to look like the original df to be able to append it.
+    # we need to make thieves look like the original df to be able to append it
     thief_df.reset_index(inplace=True)
     thief_df = thief_df.set_index(keys=['customer_no', 'timestamp'], drop=False)
     thief_df = thief_df.drop(axis=1, columns=['index', 'timestamp'])
