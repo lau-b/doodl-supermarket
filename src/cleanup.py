@@ -1,10 +1,13 @@
+import os
 import pandas as pd
 import numpy as np
 import utils
-import os
 
 
 def clean_data(df):
+    ''' Returns a cleaned version of the passed dataframe.
+        It regularizes the timeseries and fills missing values.
+    '''
     # we have to do the resampling and filling with respect to the cusomter
     df = df.groupby('customer_no').resample('1min').ffill()
 
@@ -20,7 +23,7 @@ def clean_data(df):
 
     # We need to append the transition information for the thieves until the
     # store closes
-    df = replace_thief_entries(df)
+    df = df.append(replace_thief_entries(df))
 
     # Since checkout is a absorbing state, we want for every customer to have a
     # transition that looks like (checkout) --> (checkout).
@@ -29,7 +32,13 @@ def clean_data(df):
     return df
 
 def replace_thief_entries(df):
+    ''' During cleaning the dataframe we have to deal with customers that
+        dont visit the checkout before the store closes.
+        We assume that they stay in their current location for the rest
+        of the opening time and therefore have to create those transitions.
 
+        Returns a dataframe containing the new transition values for thieves.
+    '''
     thieves = df.loc[(df['location_t'] != 'checkout') & (df['location_t+1'].isna())]
 
     # we have to delete the untries from the original df
@@ -59,7 +68,7 @@ def replace_thief_entries(df):
     thief_df = thief_df.set_index(keys=['customer_no', 'timestamp'], drop=False)
     thief_df = thief_df.drop(axis=1, columns=['index', 'timestamp'])
 
-    return df.append(thief_df)
+    return thief_df
 
 
 # get a list of files in data/raw
