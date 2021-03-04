@@ -6,19 +6,104 @@ from probability_matrix import calculate_prob_matrix
 from probability_matrix import concatenate_files
 from probability_matrix import calculate_starting_probability
 from datetime import date
+import cv2
+
+
+TILE_SIZE = 32
+OFS = 150
+
+MARKET = """
+#######DDDDDDDDDDDDD#
+C..................D#
+...................D#
+C.......DDDDDDDDD..D#
+...................##
+#.TTTTTTTTTT..TTTT.##
+#.TTTTTTTTTT..TTTT.##
+#...................G
+#.YYYYYSSSS..SSS....G
+#.YYYYYSSSS..SSS..###
+#.................###
+#...................G
+#.BBBBBBBBBBBBBB....G
+#####################
+""".strip()
+
+class Supermarket_map:
+    """ Visualizes the supermarket background """
+    def __init__(self, layout, tiles):
+        self.tiles = tiles
+        self.contents = [list(row) for row in layout.split('\n')]
+        self.xsize = len(self.contents[0])
+        self.ysize = len(self.contents)
+        self.image = np.zeros(
+            (self.ysize * TILE_SIZE, self.xsize * TILE_SIZE, 3), dtype=np.uint8
+        )
+        self.prepare_map()
+
+    def get_tile(self, char):
+        if char == "#":
+            return self.tiles[0:32, 0:32]
+        elif char == "G":
+            return self.tiles[7 * 32: 8 * 32, 3 * 32: 4 * 32]
+        elif char == "C":
+            return self.tiles[2 * 32: 3 * 32, 8 * 32: 9 * 32]
+        elif char == 'B':
+            return self.tiles[0 * 32: 1 * 32, 4 * 32: 5 * 32]
+        elif char == 'D':
+            return self.tiles[3 * 32: 4 * 32, 13 * 32: 14 * 32]
+        elif char == 'S':
+            return self.tiles[5 * 32: 6 * 32, 9 * 32: 10 * 32]
+        elif char == 'T':
+            return self.tiles[5 * 32: 6 * 32, 6 * 32: 7 * 32]
+        elif char == 'Y':
+            return self.tiles[6 * 32: 7 * 32, 9 * 32: 10 * 32]
+        else:
+            return self.tiles[32:64, 64:96]
+
+
+    def prepare_map(self):
+
+        for y, row in enumerate(self.contents):
+            for x, tile in enumerate(row):
+                bm = self.get_tile(tile)
+                self.image[
+                    y * TILE_SIZE: (y + 1) * TILE_SIZE,
+                    x * TILE_SIZE: (x + 1) * TILE_SIZE
+                ] = bm
+
+    def draw(self, frame, offset=OFS):
+        frame[
+            OFS: OFS + self.image.shape[0], OFS: OFS + self.image.shape[1]
+        ] = self.image
+
+    def write_image(self, filename):
+        """writes the image into a file"""
+        cv2.imwrite(filename, self.image)
 
 
 class Customer:
     '''single customer that can move in the supermarket randomly
        according to a probability matrix'''
-    def __init__(self, id, initial_state, prob_matrix, budget=100):
+
+    location = {
+            'fruit': [[11, 8], [8, 8], [15,9]],  # laurin doenst accept fruits in his diet
+            'dairy': [[6, 13], [4, 5], [5, 1]],
+            'drink': [[2, 17], [2, 15], [1, 14]],
+            'spice': [[9, 11], [7, 5], [8, 1]],
+            'checkout': [[3, 2], [1, 1], [1, 3]]
+    }
+
+    def __init__(self, id, initial_state, prob_matrix, image):
         self.id = id
         self.state = np.random.choice(
             list(initial_state.index),
             p=initial_state)
-        self.budget = budget
         self.matrix = prob_matrix
-        self.previous = initial_state
+        self.previous = ''
+        self.image = image[7 * 32: 8 * 32, 2 * 32: 3 * 32]
+        self.x, self.y = self.get_position(self.state)
+
 
     def __repr__(self):
         state = f'Customer {self.id} in state {self.state}.\n'
@@ -40,6 +125,7 @@ class Customer:
         return next_st
 
     def is_active(self):
+        # return not((self.state == 'checkout') and (self.previous == self.state))
         if (self.state == 'checkout') and (self.previous == self.state):
             return False
         else:
@@ -51,10 +137,42 @@ class Customer:
     def get_previous_state(self):
         return self.previous
 
+    def get_position(self, state):
+        i = np.random.randint(0, 3, dtype=int)
+        x = 1
+        y = 1
+        if state == 'dairy':
+            x = Customer.location['dairy'][i][0]
+            y = Customer.location['dairy'][i][1]
+        elif state == 'spices':
+            x = Customer.location['spice'][i][0]
+            y = Customer.location['spice'][i][1]
+        elif state == 'fruits':
+            x = Customer.location['fruit'][i][0]
+            y = Customer.location['fruit'][i][1]
+        elif state == 'drinks':
+            x = Customer.location['drink'][i][0]
+            y = Customer.location['drink'][i][1]
+        elif state == 'checkout':
+            x = Customer.location['checkout'][i][0]
+            y = Customer.location['checkout'][i][1]
+        return x, y
+
+    def update_position(self):
+        self.x, self.y = self.get_position(self.state)
+
+    def draw(self, frame):
+        frame[
+            self.x * 32 + OFS: (self.x + 1) * 32 + OFS,
+            self.y * 32 + OFS: (self.y + 1) * 32 + OFS
+        ] = self.image.astype(object)  #ghost
+        print(frame.shape, self.image.shape)
+
+# TODO: Think about location as its own class
 
 class Doodlmarket:
 
-    def __init__(self, closes_at):
+    def __init__(self, closes_at, tiles):
         self.date = date.today()
         self.minute = 0
         self.customers = []
@@ -63,6 +181,7 @@ class Doodlmarket:
         self.unique_customers = 0
         self.probability_matrix = prob_matrix
         self.name = 'MarcoMarkt'
+        self.map = Supermarket_map(layout=MARKET, tiles=tiles)
         self.initial_state_probability = initial_state_probability
 
     def __repr__(self):
@@ -86,6 +205,8 @@ class Doodlmarket:
     def next_minute(self):
         for customer in self.customers:
             customer.next_state()
+            customer.update_position()
+            customer.draw(self.map.image)
         self.minute += 1
 
     def create_customers(self):
@@ -99,13 +220,13 @@ class Doodlmarket:
             self.customers.append(Customer(
                 self.unique_customers,
                 self.initial_state_probability,
-                self.probability_matrix))
+                self.probability_matrix,
+                tiles))
 
-        return '???'  # QUESTION @Malte: What to return here?
 
     def remove_customers(self):
         for customer in self.customers:
-            if customer.state == 'checkout':  #TODO: do we need the prev check?
+            if customer.state == 'checkout':
                 self.customers.remove(customer)
 
     def record_customer_location(self):
@@ -119,30 +240,43 @@ class Doodlmarket:
         return self.minute <= open_minutes
 
 
-# QUESTION: where to put this?
-dir_path = f'{utils.get_project_root()}/data/processed/'
-df = concatenate_files(dir_path)
-initial_state_probability = calculate_starting_probability(df)
-prob_matrix = calculate_prob_matrix(df)
 
 
 if __name__ == '__main__':
 
+# QUESTION: where to put this?
+
+
+    dir_path = f'{utils.get_project_root()}/data/processed/'
+    df = concatenate_files(dir_path)
+    initial_state_probability = calculate_starting_probability(df)
+    prob_matrix = calculate_prob_matrix(df)
+
+    background = np.zeros((700, 1000, 3), np.uint8)
+    tiles = cv2.imread(f'{utils.get_project_root()}/img/tiles.png')
+
     # for i in range(100):
     # creating the header for our output file, that we fill during the simulation
-        with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
-            file.write(f'timestamp,customer_no,location\n')
+    with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
+        file.write(f'timestamp,customer_no,location\n')
 
-        lidl = Doodlmarket(closes_at=22)
+    lidl = Doodlmarket(closes_at=8, tiles=tiles)
 
-        while lidl.is_open():  # is the shop open? TODO: write boolean function for that
+    while lidl.is_open():
+        frame = background.copy()
+        lidl.map.draw(frame)
 
-            lidl.create_customers()
-            lidl.record_customer_location()
-            # movement here without adding 1 to the time
-            lidl.remove_customers()
+        lidl.create_customers()
+        lidl.record_customer_location()
+        # movement here without adding 1 to the time
+        lidl.remove_customers()
 
-            # lidl.record_customer_location()
+        # lidl.record_customer_location()
+        cv2.imshow("frame", frame)
 
-            lidl.next_minute()
+        lidl.next_minute()
+        key = chr(cv2.waitKey(1) & 0xFF)
+        if key == "q":
+            break
 
+    cv2.destroyAllWindows()
