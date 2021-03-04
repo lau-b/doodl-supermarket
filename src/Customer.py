@@ -6,7 +6,26 @@ from probability_matrix import calculate_prob_matrix
 from probability_matrix import concatenate_files
 from probability_matrix import calculate_starting_probability
 from datetime import date
+import cv2
 
+TILE_SIZE = 32
+OFS = 150
+MARKET = """
+#######DDDDDDDDDDDDD#
+C..................D#
+...................D#
+C.......DDDDDDDDD..D#
+...................##
+#.TTTTTTTTTT..TTTT.##
+#.TTTTTTTTTT..TTTT.##
+#...................G
+#.YYYYYSSSS..SSS....G
+#.YYYYYSSSS..SSS..###
+#.................###
+#...................G
+#.BBBBBBBBBBBBBB....G
+#####################
+""".strip()
 
 class Customer:
     '''single customer that can move in the supermarket randomly
@@ -118,6 +137,67 @@ class Doodlmarket:
         open_minutes = (self.closes_at - self.opens_at) * 60
         return self.minute <= open_minutes
 
+class SupermarketMap:
+    """Visualizes the supermarket background"""
+
+    def __init__(self, layout, tiles):
+        """
+        layout : a string with each character representing a tile
+        tile   : a numpy array containing the tile image
+        """
+        self.tiles = tiles
+        self.contents = [list(row) for row in layout.split("\n")]
+        self.xsize = len(self.contents[0])
+        self.ysize = len(self.contents)
+        self.image = np.zeros(
+            (self.ysize * TILE_SIZE, self.xsize * TILE_SIZE, 3), dtype=np.uint8
+        )
+        self.prepare_map()
+
+    def get_tile(self, char):
+        """returns the array for a given tile character"""
+        if char == "#":
+            return self.tiles[0:32, 0:32]
+        elif char == "G":
+            return self.tiles[7 * 32: 8 * 32, 3 * 32: 4 * 32]
+        elif char == "C":
+            return self.tiles[2 * 32: 3 * 32, 8 * 32: 9 * 32]
+        elif char == 'B':
+            return self.tiles[0 * 32: 1 * 32, 4 * 32: 5 * 32]
+        elif char == 'D':
+            return self.tiles[3 * 32: 4 * 32, 13 * 32: 14 * 32]
+        elif char == 'S':
+            return self.tiles[5 * 32: 6 * 32, 9 * 32: 10 * 32]
+        elif char == 'T':
+            return self.tiles[5 * 32: 6 * 32, 6 * 32: 7 * 32]
+        elif char == 'Y':
+            return self.tiles[6 * 32: 7 * 32, 9 * 32: 10 * 32]
+        else:
+            return self.tiles[32:64, 64:96]
+
+    def prepare_map(self):
+        """prepares the entire image as a big numpy array"""
+        for y, row in enumerate(self.contents):
+            for x, tile in enumerate(row):
+                bm = self.get_tile(tile)
+                self.image[
+                    y * TILE_SIZE: (y + 1) * TILE_SIZE,
+                    x * TILE_SIZE: (x + 1) * TILE_SIZE,
+                ] = bm
+
+    def draw(self, frame, offset=OFS):
+        """
+        draws the image into a frame
+        offset pixels from the top left corner
+        """
+        frame[
+            OFS: OFS + self.image.shape[0], OFS: OFS + self.image.shape[1]
+        ] = self.image
+
+    def write_image(self, filename):
+        """writes the image into a file"""
+        cv2.imwrite(filename, self.image)
+
 
 # QUESTION: where to put this?
 dir_path = f'{utils.get_project_root()}/data/processed/'
@@ -130,19 +210,48 @@ if __name__ == '__main__':
 
     # for i in range(100):
     # creating the header for our output file, that we fill during the simulation
-        with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
-            file.write(f'timestamp,customer_no,location\n')
+    with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
+        file.write(f'timestamp,customer_no,location\n')
 
-        lidl = Doodlmarket(closes_at=22)
+    background = np.zeros((700, 1000, 3), np.uint8)
+    tiles = cv2.imread(f'{utils.get_project_root()}/img/tiles.png')
+    market_map = SupermarketMap(MARKET, tiles)
 
-        while lidl.is_open():  # is the shop open? TODO: write boolean function for that
+    lidl = Doodlmarket(closes_at=22)
 
-            lidl.create_customers()
-            lidl.record_customer_location()
-            # movement here without adding 1 to the time
-            lidl.remove_customers()
+    while lidl.is_open():  # is the shop open? TODO: write boolean function for that
 
-            # lidl.record_customer_location()
+        frame = background.copy()
+        market_map.draw(frame)
 
-            lidl.next_minute()
+        lidl.create_customers()
+        lidl.record_customer_location()
+        # movement here without adding 1 to the time
+        lidl.remove_customers()
 
+        # lidl.record_customer_location()
+
+        lidl.next_minute()
+        cv2.imshow("frame", frame)
+
+        key = chr(cv2.waitKey(1) & 0xFF)
+        if key == "q":
+            break
+        elif key in ('w', 'a', 's', 'd', 'c'):
+            cust.move(key)
+
+    cv2.destroyAllWindows()
+
+
+
+    while True:
+
+        cv2.imshow("frame", frame)
+
+        key = chr(cv2.waitKey(1) & 0xFF)
+        if key == "q":
+            break
+        elif key in ('w', 'a', 's', 'd', 'c'):
+            cust.move(key)
+
+    cv2.destroyAllWindows()
