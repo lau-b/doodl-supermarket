@@ -37,9 +37,10 @@ class Customer:
             p=initial_state)
         self.matrix = prob_matrix
         self.previous = initial_state
-        self.x = 10
-        self.y = 10
+        self.x = 0
+        self.y = 0
         self.image = image[7 * 32: 8 * 32, 2 * 32: 3 * 32]
+        self.update_position(self.state)
 
     def __repr__(self):
         state = f'Customer {self.id} in state {self.state}. {self.x, self.y} END \n'
@@ -258,6 +259,7 @@ if __name__ == '__main__':
         for customer in lidl.customers:
                 customer.update_position(customer.next_state())
                 customer.draw(frame)
+                time.sleep(1)
 
         # lidl.record_customer_location()
 
