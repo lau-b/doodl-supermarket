@@ -30,19 +30,21 @@ C.......DDDDDDDDD..D#
 class Customer:
     '''single customer that can move in the supermarket randomly
        according to a probability matrix'''
-    def __init__(self, id, initial_state, prob_matrix, budget=100):
+    def __init__(self, id, initial_state, prob_matrix, image):
         self.id = id
         self.state = np.random.choice(
             list(initial_state.index),
             p=initial_state)
-        self.budget = budget
         self.matrix = prob_matrix
         self.previous = initial_state
+        self.x = 10
+        self.y = 10
+        self.image = image[7 * 32: 8 * 32, 2 * 32: 3 * 32]
 
     def __repr__(self):
-        state = f'Customer {self.id} in state {self.state}.\n'
-        budget = f'The budget of customer {self.id} amount to {self.budget}'
-        return state + budget
+        state = f'Customer {self.id} in state {self.state}. {self.x, self.y} END \n'
+
+        return state
 
     def next_state(self):
         '''prob_matrix is the prbability matrix of the supermaket states
@@ -58,11 +60,34 @@ class Customer:
         self.state = next_st
         return next_st
 
+    def update_position(self, state):
+        if state == 'dairy':
+            self.x = 6
+            self.y = 13
+        elif state == 'drinks':
+            self.x = 2
+            self.y = 17
+        elif state == 'spices':
+            self.x = 9
+            self.y = 11
+        elif state == 'fruit':
+            self.x = 11
+            self.y = 8
+        elif state == 'checkout':
+            self.x = 3
+            self.y = 2
+
     def is_active(self):
         if (self.state == 'checkout') and (self.previous == self.state):
             return False
         else:
             return True
+
+    def draw(self, frame):
+        frame[
+            self.x * 32 + OFS: (self.x + 1) * 32 + OFS,
+            self.y * 32 + OFS: (self.y + 1) * 32 + OFS
+        ] = self.image
 
     def get_current_state(self):
         return self.state
@@ -73,7 +98,7 @@ class Customer:
 
 class Doodlmarket:
 
-    def __init__(self, closes_at):
+    def __init__(self, closes_at, image):
         self.date = date.today()
         self.minute = 0
         self.customers = []
@@ -83,6 +108,7 @@ class Doodlmarket:
         self.probability_matrix = prob_matrix
         self.name = 'MarcoMarkt'
         self.initial_state_probability = initial_state_probability
+        self.image = image
 
     def __repr__(self):
         return f'Welcome to {self.name}. Enjoy your shopping. \n \
@@ -118,13 +144,14 @@ class Doodlmarket:
             self.customers.append(Customer(
                 self.unique_customers,
                 self.initial_state_probability,
-                self.probability_matrix))
+                self.probability_matrix,
+                self.image))
 
-        return '???'  # QUESTION @Malte: What to return here?
+        return '???'
 
     def remove_customers(self):
         for customer in self.customers:
-            if customer.state == 'checkout':  #TODO: do we need the prev check?
+            if customer.state == 'checkout':
                 self.customers.remove(customer)
 
     def record_customer_location(self):
@@ -217,7 +244,7 @@ if __name__ == '__main__':
     tiles = cv2.imread(f'{utils.get_project_root()}/img/tiles.png')
     market_map = SupermarketMap(MARKET, tiles)
 
-    lidl = Doodlmarket(closes_at=22)
+    lidl = Doodlmarket(closes_at=9, image=tiles)
 
     while lidl.is_open():  # is the shop open? TODO: write boolean function for that
 
@@ -228,24 +255,13 @@ if __name__ == '__main__':
         lidl.record_customer_location()
         # movement here without adding 1 to the time
         lidl.remove_customers()
+        for customer in lidl.customers:
+                customer.update_position(customer.next_state())
+                customer.draw(frame)
 
         # lidl.record_customer_location()
 
         lidl.next_minute()
-        cv2.imshow("frame", frame)
-
-        key = chr(cv2.waitKey(1) & 0xFF)
-        if key == "q":
-            break
-        elif key in ('w', 'a', 's', 'd', 'c'):
-            cust.move(key)
-
-    cv2.destroyAllWindows()
-
-
-
-    while True:
-
         cv2.imshow("frame", frame)
 
         key = chr(cv2.waitKey(1) & 0xFF)
