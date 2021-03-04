@@ -54,11 +54,12 @@ class Customer:
 
 class Doodlmarket:
 
-    def __init__(self):
+    def __init__(self, closes_at):
         self.date = date.today()
         self.minute = 0
         self.customers = []
         self.opens_at = 7
+        self.closes_at = closes_at
         self.unique_customers = 0
         self.probability_matrix = prob_matrix
         self.name = 'MarcoMarkt'
@@ -83,9 +84,9 @@ class Doodlmarket:
         return f'{day} {hour:02d}:{minute:02d}:00'
 
     def next_minute(self):
-        self.minute += 1
         for customer in self.customers:
             customer.next_state()
+        self.minute += 1
 
     def create_customers(self):
         # every minute there can enter a maximum of 5 new customers
@@ -104,7 +105,7 @@ class Doodlmarket:
 
     def remove_customers(self):
         for customer in self.customers:
-            if customer.state == 'checkout' and customer.previous == 'checkout':  #TODO: do we need the prev check?
+            if customer.state == 'checkout':  #TODO: do we need the prev check?
                 self.customers.remove(customer)
 
     def record_customer_location(self):
@@ -112,6 +113,10 @@ class Doodlmarket:
         for customer in self.customers:
             with open(filepath, 'a') as f:
                 f.write(f'{self.get_time()},{customer.id},{customer.state}\n')
+
+    def is_open(self):
+        open_minutes = (self.closes_at - self.opens_at) * 60
+        return self.minute <= open_minutes
 
 
 # QUESTION: where to put this?
@@ -123,21 +128,21 @@ prob_matrix = calculate_prob_matrix(df)
 
 if __name__ == '__main__':
 
+    # for i in range(100):
     # creating the header for our output file, that we fill during the simulation
-    with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
-        file.write(f'timestamp,customer_no,location\n')
+        with open(f'{utils.get_project_root()}/data/output/marcomarkt.csv', 'w') as file:
+            file.write(f'timestamp,customer_no,location\n')
 
-    lidl = Doodlmarket()
+        lidl = Doodlmarket(closes_at=22)
 
-    i = 0
-    while i < 120:  # is the shop open? TODO: write boolean function for that
+        while lidl.is_open():  # is the shop open? TODO: write boolean function for that
 
-        lidl.create_customers()
+            lidl.create_customers()
+            lidl.record_customer_location()
+            # movement here without adding 1 to the time
+            lidl.remove_customers()
 
-        lidl.next_minute()
+            # lidl.record_customer_location()
 
-        lidl.remove_customers()
+            lidl.next_minute()
 
-        lidl.record_customer_location()
-
-        i += 1
