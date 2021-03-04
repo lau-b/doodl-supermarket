@@ -14,7 +14,7 @@ class Customer:
     def __init__(self, id, initial_state, prob_matrix, budget=100):
         self.id = id
         self.state = np.random.choice(
-            ['dairy', 'drinks', 'fruit', 'spices'],
+            list(initial_state.index),
             p=initial_state)
         self.budget = budget
         self.matrix = prob_matrix
@@ -33,6 +33,7 @@ class Customer:
             self.matrix.index.get_level_values(0) == self.state]]).reshape(-1)
         next_st = np.random.choice(
             ['checkout', 'dairy', 'drinks', 'fruit', 'spices'],
+            # TODO: we could also try to get a list of column names instead.
             p=prob_line)
         self.previous = self.state
         self.state = next_st

@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 
-
 def concatenate_files(dir_path):
     '''dir_path is the path to the directory where are stored the cleaned
        csv to be concatenated. The function concatenates the csv files and
@@ -34,8 +33,8 @@ def calculate_prob_matrix(conc_df):
 def calculate_starting_probability(conc_df):
     '''calculates the probabilty for a customer to spawn in a certain area
     '''
-    # TODO: We need to test if we pass the correct proba/location combination
     conc_df['date'] = conc_df.index.date
     conc_df = conc_df.drop(columns='location_t+1')
     conc_df = conc_df.groupby(['date', 'customer_no']).first()
     return conc_df['location_t'].value_counts(normalize=1)
+
